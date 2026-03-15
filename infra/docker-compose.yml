@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+# Gateway
+  kong:
+    image: kong:3.6
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_PLUGINS: bundled
+    ports:
+      - "8000:8000"   # proxy
+      - "8001:8001"   # admin API
+    volumes:
+      - ./kong.yml:/kong.yml
+    depends_on:
+      - sidecar
+
+  sidecar:
+    build: ./sidecar
+    container_name: sidecar
+    environment:
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "8080:8080"   # sidecar API
+
+# Kafka
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:7.5.0
+  #   container_name: zookeeper
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
+  #   ports:
+  #     - "2181:2181"
+
+  # kafka:
+  #   image: confluentinc/cp-kafka:7.5.0
+  #   container_name: kafka
+  #   depends_on:
+  #     - zookeeper
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #   ports:
+  #     - "9092:9092"
+
+  kafka:
+      image: apache/kafka:latest
+      container_name: kafka
+      volumes:
+        - ./data/kafka:/var/lib/kafka/data 
+      environment:
+        KAFKA_NODE_ID: 1
+        KAFKA_PROCESS_ROLES: broker,controller
+        KAFKA_LISTENERS: PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+        KAFKA_NUM_PARTITIONS: 3
+      ports:
+        - "9092:9092"
+
+# Postgresql
+  postgres-user:
+    image: postgres:16
+    container_name: postgres-user
+    environment:
+      POSTGRES_USER: user_service
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: users
+    ports:
+      - "5440:5432"
+    volumes:
+      - ./data/postgres-user:/var/lib/postgresql
+
+  postgres-payment:
+    image: postgres:16
+    container_name: postgres-payment
+    environment:
+      POSTGRES_USER: payment_service
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: payments
+    ports:
+      - "5441:5432"
+    volumes:
+      - ./data/postgres-payment:/var/lib/postgresql
+
+# MongoDB
+  mongo-event:
+    image: mongo:6
+    container_name: mongo-event
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./data/mongo-event:/data/db
+
+  mongo-booking:
+    image: mongo:6
+    container_name: mongo-booking
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./data/mongo-booking:/data/db
+
+  mongo-notification:
+    image: mongo:6
+    container_name: mongo-notification
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./data/mongo-notification:/data/db
+
+# Redis
+  redis:
+    image: redis:8
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+
+# Network
+networks:
+  default:
+    name: infra-net

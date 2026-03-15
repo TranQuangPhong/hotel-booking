@@ -1,0 +1,48 @@
+Bảng mapping event Kafka
+
+Event				      Publish bởi			  Consume bởi				      Action
+user_request		  Gateway				    User Service			      Đăng ký/đăng nhập, phát JWT
+
+room_query		    Gateway				    Room Service			      Lấy danh sách phòng, chi tiết phòng
+booking_check		  Gateway				    Booking Service			    Kiểm tra trạng thái booking
+booking_request		Gateway				    Booking Service			    Book phòng, tạo booking tạm thời
+
+booking_accepted	Booking Service		Room Service			      Cập nhật số lượng & trạng thái phòng, tạo booking chính thức
+booking_accepted	Booking Service		Payment Service			    Bắt đầu xử lý thanh toán
+booking_declined	Booking Service		Room Service			      Xử lý booking thất bại (ví dụ: phòng đã hết), cập nhật trạng thái phòng
+booking_declined	Booking Service		Notification 	          Gửi email thông báo thất bại
+
+payment_success		Payment Service		Booking Service        	Booking finalize - trạng thái booking SUCCESS
+payment_success		Payment Service		Room Service           	Cập nhật trạng thái phòng (đã bán)
+payment_success		Payment Service		Notification 	          Gửi email xác nhận
+
+payment_failed		Payment Service		Booking Service        	Rollback vé - trạng thái booking FAILED
+payment_failed		Payment Service		Room Service           	Cập nhật trạng thái phòng (hủy bán)
+payment_failed		Payment Service		Notification 	          Gửi email báo lỗi
+
+
+{
+  "traceId": "uuid-1234-5678",        // ID duy nhất để trace toàn bộ flow
+  "eventType": "booking_request",     // Loại sự kiện (user_request, room_query, booking_request, payment_success, payment_failed...)
+  "timestamp": "2026-02-12T16:35:00Z",// Thời điểm phát sinh event
+  "user": {
+    "userId": "abc123",
+    "roles": ["USER"],
+    "email": "user@example.com"       // Có thể dùng cho Notification Service
+  },
+  "payload": {
+    // Nội dung chính của request
+    "eventId": "evt567",
+    "roomId": 2,
+    "checkIn": "2026-03-01",
+    "checkOut": "2026-03-05",
+    "guests": 2,
+    "price": 100,
+    "currency": "USD"
+  },
+  "saga": {
+    "step": "BOOKING",                // Bước hiện tại trong Saga (BOOKING, PAYMENT)
+    "status": "PENDING",              // Trạng thái (PENDING, PROCESSING, SUCCESS, FAILED)
+    "compensation": "CANCEL_BOOKING"  // Hành động rollback nếu thất bại
+  }
+}
