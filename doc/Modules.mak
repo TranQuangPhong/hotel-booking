@@ -7,7 +7,7 @@
 2. User Service (Java + Postgres)
 - Đăng ký, đăng nhập, quản lý profile.
 - Phát hành JWT token.
-- Lưu thông tin user trong MongoDB.
+- Lưu thông tin user trong Postgres.
 
 3.Room Service (Go + Redis + Kafka + MongoDB)
 - CRUD phòng (tạo, sửa, xoá, xem).

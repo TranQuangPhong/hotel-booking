@@ -1,10 +1,10 @@
 Bảng mapping event Kafka
 
 Event				      Publish bởi			  Consume bởi				      Action
-user_request		  Gateway				    User Service			      Đăng ký/đăng nhập, phát JWT
+// user_request		  Gateway				    User Service			      Đăng ký/đăng nhập, phát JWT
 
-room_query		    Gateway				    Room Service			      Lấy danh sách phòng, chi tiết phòng
-booking_check		  Gateway				    Booking Service			    Kiểm tra trạng thái booking
+// room_query		    Gateway				    Room Service			      Lấy danh sách phòng, chi tiết phòng
+// booking_check		  Gateway				    Booking Service			    Kiểm tra trạng thái booking
 booking_request		Gateway				    Booking Service			    Book phòng, tạo booking tạm thời
 
 booking_accepted	Booking Service		Room Service			      Cập nhật số lượng & trạng thái phòng, tạo booking chính thức
@@ -23,7 +23,7 @@ payment_failed		Payment Service		Notification 	          Gửi email báo lỗi
 
 {
   "traceId": "uuid-1234-5678",        // ID duy nhất để trace toàn bộ flow
-  "eventType": "booking_request",     // Loại sự kiện (user_request, room_query, booking_request, payment_success, payment_failed...)
+  "eventType": "booking_request",     // Loại sự kiện (room_query, booking_request, payment_success, payment_failed...)
   "timestamp": "2026-02-12T16:35:00Z",// Thời điểm phát sinh event
   "user": {
     "userId": "abc123",
