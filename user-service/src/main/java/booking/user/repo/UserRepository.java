@@ -1,6 +1,6 @@
-package booking.users.repo;
+package booking.user.repo;
 
-import booking.users.entity.User;
+import booking.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

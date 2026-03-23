@@ -1,6 +1,6 @@
-package booking.users.security;
+package booking.user.security;
 
-import booking.users.entity.User;
+import booking.user.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;

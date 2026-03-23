@@ -1,8 +1,8 @@
-package booking.users.controller;
+package booking.user.controller;
 
-import booking.users.entity.User;
-import booking.users.security.JwtUtil;
-import booking.users.service.UserService;
+import booking.user.entity.User;
+import booking.user.security.JwtUtil;
+import booking.user.service.UserService;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/user")
 public class UserController {
     @Autowired
     private UserService userService;
@@ -21,7 +21,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> req) {
-        User user = userService.register(req.get("username"), req.get("email"), req.get("password"));
+        User user = userService.register(req.get("username"), req.get("password"), req.get("role"), req.get("email"));
         return ResponseEntity.ok(user);
     }
 
@@ -29,7 +29,7 @@ public class UserController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
         return userService.login(req.get("username"), req.get("password"))
                 .map(user -> ResponseEntity.ok(Map.of("token", jwtUtil.generateToken(user))))
-                .orElse(ResponseEntity.status( HttpStatus.UNAUTHORIZED).build());
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     @GetMapping("/whoami")

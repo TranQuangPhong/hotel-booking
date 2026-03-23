@@ -1,4 +1,4 @@
-package booking.users.exception.handler;
+package booking.user.exception.handler;
 
 import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;

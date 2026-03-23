@@ -1,4 +1,4 @@
-package booking.users.entity;
+package booking.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(schema = "booking", name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -27,7 +27,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String passwordHash;
+    private String password;
 
     @Column(nullable = false)
     private String role;
