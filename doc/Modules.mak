@@ -13,7 +13,6 @@
 - CRUD phòng (tạo, sửa, xoá, xem).
 - Lưu dữ liệu phòng trong MongoDB.
 - Consume từ Kafka topic & cập nhật trạng thái phòng:
-    + room-query
 	+ booking_accepted
 	+ booking_declined
 	+ payment_failed

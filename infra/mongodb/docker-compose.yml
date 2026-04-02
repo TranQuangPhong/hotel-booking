@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+
+  mongo:
+    image: mongodb/mongodb-community-server
+    restart: always
+    ports:
+       - 27027:27017
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: room_service
+      MONGODB_INITDB_ROOT_PASSWORD: room_service
+    volumes:
+      - type: bind
+        source: ./room-service/data
+        target: /data/db
