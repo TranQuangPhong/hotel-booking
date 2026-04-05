@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"booking/room-service/models"
+	"booking/room-service/model"
 	"context"
 	"time"
 
@@ -18,14 +18,14 @@ func NewRoomRepository(collection *mongo.Collection) *RoomRepository {
 }
 
 // Get all rooms
-func (r *RoomRepository) GetAllRooms(ctx context.Context) ([]*models.Room, error) {
+func (r *RoomRepository) GetAllRooms(ctx context.Context) ([]*model.Room, error) {
 	cursor, err := r.collection.Find(ctx, bson.D{})
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var rooms []*models.Room
+	var rooms []*model.Room
 	if err = cursor.All(ctx, &rooms); err != nil {
 		return nil, err
 	}
@@ -34,13 +34,13 @@ func (r *RoomRepository) GetAllRooms(ctx context.Context) ([]*models.Room, error
 }
 
 // Get room by ID
-func (r *RoomRepository) GetRoomByID(ctx context.Context, id string) (*models.Room, error) {
+func (r *RoomRepository) GetRoomByID(ctx context.Context, id string) (*model.Room, error) {
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
-	var room models.Room
+	var room model.Room
 	err = r.collection.FindOne(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&room)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (r *RoomRepository) GetRoomByID(ctx context.Context, id string) (*models.Ro
 }
 
 // Insert document
-func (r *RoomRepository) CreateRoom(ctx context.Context, room *models.Room) error {
+func (r *RoomRepository) CreateRoom(ctx context.Context, room *model.Room) error {
 	room.CreatedAt = time.Now()
 	room.UpdatedAt = time.Now()
 	room.Status = "available"
@@ -60,7 +60,7 @@ func (r *RoomRepository) CreateRoom(ctx context.Context, room *models.Room) erro
 }
 
 // Update room status
-func (r *RoomRepository) UpdateRoomStatus(ctx context.Context, id string, status models.RoomStatus) error {
+func (r *RoomRepository) UpdateRoomStatus(ctx context.Context, id string, status model.RoomStatus) error {
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return err

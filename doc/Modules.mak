@@ -25,7 +25,6 @@
 - Sau khi confirm, publish message sang Kafka topic booking_accepted.
 - Nếu có lỗi (ví dụ: phòng đã hết) → publish booking_declined.
 - Consume từ Kafka topic & cập nhật trạng thái booking
-    + booking_check
 	+ booking_request
 	+ payment_failed → rollback (xoá phòng trong Redis)
 	+ payment_success.

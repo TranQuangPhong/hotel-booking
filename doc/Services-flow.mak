@@ -54,5 +54,5 @@ II. Read flow (synchronous rest API)
 - Nhan truc tiep http request.
 - Trả dữ liệu từ Redis/MongoDB.
 2. Booking Service
-- Consume từ Kafka topic booking_check.
+- Nhan truc tiep http request.
 - Trả dữ liệu từ Redis/MongoDB.

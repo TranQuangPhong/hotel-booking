@@ -1,4 +1,4 @@
-package models
+package model
 
 import (
 	"time"
@@ -35,6 +35,15 @@ func (s RoomStatus) IsValid() bool {
 }
 
 // Kafka event payload
+type KafkaEvent struct {
+	TraceID   string       `json:"traceId"`
+	EventType string       `json:"eventType"`
+	Timestamp time.Time    `json:"timestamp"`
+	User      UserBlock    `json:"userBlock"`
+	Payload   PayloadBlock `json:"payloadBlock"`
+	Saga      SagaBlock    `json:"sagaBlock"`
+}
+
 type SagaBlock struct {
 	Step         string `json:"step"`
 	Status       string `json:"status"`       //pending, completed, failed
@@ -55,13 +64,4 @@ type PayloadBlock struct {
 	Guests   int     `json:"guests"`
 	Price    float64 `json:"price"`
 	Currency string  `json:"currency"`
-}
-
-type KafkaEvent struct {
-	TraceID   string       `json:"traceId"`
-	EventType string       `json:"eventType"`
-	Timestamp time.Time    `json:"timestamp"`
-	User      UserBlock    `json:"userBlock"`
-	Payload   PayloadBlock `json:"payloadBlock"`
-	Saga      SagaBlock    `json:"sagaBlock"`
 }

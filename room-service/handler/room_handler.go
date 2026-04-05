@@ -1,7 +1,7 @@
-package handlers
+package handler
 
 import (
-	"booking/room-service/models"
+	"booking/room-service/model"
 	"booking/room-service/service"
 	"fmt"
 
@@ -40,7 +40,7 @@ func (h *RoomHandler) GetRoomByID(c *gin.Context) {
 
 // Create new room
 func (h *RoomHandler) CreateRoom(c *gin.Context) {
-	var room *models.Room //TODO: consider using a separate DTO for create requests
+	var room *model.Room //TODO: consider using a separate DTO for create requests
 	if err := c.ShouldBindJSON(&room); err != nil {
 		c.JSON(400, gin.H{"error": fmt.Errorf("invalid request body: %w", err).Error()})
 		return
@@ -59,7 +59,7 @@ func (h *RoomHandler) UpdateRoomStatus(c *gin.Context) {
 	roomID := c.Param("id")
 	// Define a small DTO for the request body
 	var input struct {
-		Status models.RoomStatus `json:"status" binding:"required"`
+		Status model.RoomStatus `json:"status" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {

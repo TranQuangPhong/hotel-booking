@@ -1,7 +1,7 @@
 package main
 
 import (
-	"booking/room-service/handlers"
+	"booking/room-service/handler"
 	"booking/room-service/repository"
 	"booking/room-service/service"
 	"context"
@@ -36,11 +36,11 @@ func main() {
 		}
 	}()
 
-	// 2. Initialize repository, service, and handlers
+	// 2. Initialize repository, service, and handler
 	roomsCollection := client.Database("booking").Collection("rooms")
 	roomRepo := repository.NewRoomRepository(roomsCollection)
 	roomService := service.NewRoomService(roomRepo)
-	roomHandler := handlers.NewRoomHandler(roomService)
+	roomHandler := handler.NewRoomHandler(roomService)
 
 	// 3. Start the HTTP server
 	router := roomHandler.RoomRouter()
