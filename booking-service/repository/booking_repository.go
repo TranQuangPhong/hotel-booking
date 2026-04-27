@@ -3,7 +3,6 @@ package repository
 import (
 	"booking/booking-service/model"
 	"context"
-	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -49,10 +48,7 @@ func (r *BookingRepository) GetBookingsByUserID(ctx context.Context, userID stri
 
 // Create new booking (reserve room)
 func (r *BookingRepository) CreateBooking(ctx context.Context, booking *model.Booking) error {
-	booking.CreatedAt = time.Now()
-	booking.UpdatedAt = time.Now()
-	booking.BookingStatus = model.StatusReserved
 	_, err := r.collection.InsertOne(ctx, booking)
-	//TODO: Send msg to Kafka
+	//TODO: to use outbox with CDC (next phase)
 	return err
 }
