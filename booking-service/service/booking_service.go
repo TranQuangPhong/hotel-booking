@@ -2,7 +2,9 @@ package service
 
 import (
 	"booking/booking-service/model"
+	"booking/booking-service/repository"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -24,6 +26,9 @@ func NewBookingService(repo BookingRepository) *BookingService {
 func (s *BookingService) GetBookingByID(ctx context.Context, id string) (*model.Booking, error) {
 	booking, err := s.bookingRepository.GetBookingByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, repository.ErrInvalidBookingID) {
+			return nil, nil //Hide internal error details, just return nil to indicate not found
+		}
 		return nil, fmt.Errorf("failed to get booking by ID: %w", err)
 	}
 	return booking, nil

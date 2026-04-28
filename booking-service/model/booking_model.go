@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// Booking collection in MongoDB
+// Bookings collection in MongoDB
 type Booking struct {
 	ID bson.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 

@@ -22,6 +22,7 @@ func (h *BookingHandler) GetBookingByID(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": fmt.Errorf("failed to fetch booking: %w", err).Error()})
+		return
 	}
 
 	c.JSON(200, booking)
@@ -47,5 +48,5 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		c.JSON(500, gin.H{"error": fmt.Errorf("failed to create booking: %w", err).Error()})
 		return
 	}
-	c.JSON(201, booking)
+	c.JSON(201, gin.H{"message": "Booking created"})
 }

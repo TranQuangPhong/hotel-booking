@@ -35,4 +35,4 @@ go.work.sum
 desktop.ini
 
 # DB volumes
-infra/mongodb/room-service/data
+infra/mongodb/*/data

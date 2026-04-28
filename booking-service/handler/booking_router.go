@@ -9,7 +9,7 @@ func (h *BookingHandler) Bookingrouter() *gin.Engine {
 	{
 		v1.GET("/:id", h.GetBookingByID)
 		v1.GET("/user/:userID", h.GetBookingsByUserID)
-		v1.POST("/", h.CreateBooking)
+		v1.POST("/", h.CreateBooking) //TODO: remove this, use Kafka instead
 		// TODO Cancel booking endpoint can be added here in the future
 	}
 

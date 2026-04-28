@@ -3,6 +3,7 @@ package repository
 import (
 	"booking/booking-service/model"
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -16,11 +17,15 @@ func NewBookingRepository(collection *mongo.Collection) *BookingRepository {
 	return &BookingRepository{collection: collection}
 }
 
+var (
+	ErrInvalidBookingID = errors.New("invalid booking ID format")
+)
+
 // Get booking by ID
 func (r *BookingRepository) GetBookingByID(ctx context.Context, id string) (*model.Booking, error) {
 	bookingID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidBookingID
 	}
 	var booking model.Booking
 	err = r.collection.FindOne(ctx, bson.D{{Key: "_id", Value: bookingID}}).Decode(&booking)
