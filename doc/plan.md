@@ -7,8 +7,9 @@
 4. Booking service
     4.1. Model design - done
     4.2. HTTP APIs - done
-    4.3. Kong integration - pending
-    4.4. Publish/subscribe Saga - pending
+    4.3. Kong integration - done
+    4.4. Kafka setup - done
+    4.5. Publish/subscribe - done
 5. Payment service
 6. Notify service
 
@@ -16,6 +17,7 @@
 8. VPS/AWS deploy
 9. CICD
 10. Upgrade
+    - Refactor hexagon structure + Saga msg structure
     - Monitoring
     - CDC + outbox pattern
     - Idempotence
@@ -24,12 +26,11 @@
 11. Apply AI to gen FE
 12. Re-deploy
 
-13. Refactor project folders structure
 
 
 
 Next: 4.4 --> 3.3
-    - Setup Kafka docker
-    - Booking service - Kafka config both Publish/subscribe
-    - Kong - Kafka plugin to send msg to Booking
     - Room service - Kafka config to subscribe
+    - Booking service - check room status
+        + Full Saga: booking --> create emp booking --> produces to Room service --> reserves room --> produces to booking --> payment
+        + 

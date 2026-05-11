@@ -2,12 +2,12 @@ package main
 
 import (
 	"booking/booking-service/handler"
+	"booking/booking-service/kafka"
 	"booking/booking-service/repository"
 	"booking/booking-service/service"
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -18,7 +18,11 @@ import (
 )
 
 func main() {
-	// 1. MongoDB connection setup
+	// 1. Create a root context that listens for OS shutdown signals
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// 2. MongoDB connection setup
 	credential := options.Credential{
 		Username: "booking_service",
 		Password: "booking_service",
@@ -34,19 +38,24 @@ func main() {
 		}
 	}()
 
-	// 2. Initialize repository, service, and handler
+	// 3. Initialize repository, service, and handler
 	bookingsCollection := client.Database("booking").Collection("bookings")
 	bookingRepo := repository.NewBookingRepository(bookingsCollection)
 	bookingService := service.NewBookingService(bookingRepo)
-	bookingHandler := handler.NewBookingHandler(bookingService)
+	bookingProducer, err := kafka.NewBookingProducer([]string{kafka.BookingBrokerAddress})
+	if err != nil {
+		log.Fatal("Panic: Failed to create Kafka producer:", err)
+		return
+	}
+	bookingHandler := handler.NewBookingHandler(bookingService, bookingProducer)
 
-	// 3. Start the HTTP server
+	// 4. Start the HTTP server
 	router := bookingHandler.Bookingrouter()
-	router.GET("/", func(ctx *gin.Context) {
-		ctx.String(200, "Welcome to Booking Service")
+	router.GET("/api/v1", func(c *gin.Context) {
+		c.String(200, "Welcome to Booking Service")
 	})
-	router.GET("/health", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{"status": "healthy"})
+	router.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "healthy"})
 	})
 
 	srv := &http.Server{
@@ -61,18 +70,41 @@ func main() {
 		}
 	}()
 
-	// 4. Graceful shutdown on interrupt signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down server...")
+	// 5. Initialize and Start the Kafka Consumer
+	log.Println("Kafka consumer starting ...")
+	brokers := []string{kafka.BookingBrokerAddress}
+	groupID := kafka.BookingRequestGroupID
+	topics := []string{kafka.BookingRequestTopic}
+	consumer, err := kafka.NewBookingConsumer(brokers, groupID, topics, bookingService)
+	if err != nil {
+		log.Fatalf("Failed to create Kafka consumer: %v", err)
+	}
+	// Pass the OS signal context. The consumer will run until 'ctx' is canceled.
+	go consumer.Start(ctx)
+
+	log.Println("Finished initialization, service is running...")
+
+	// 6. Block the main thread waiting for the interrupt signal
+	<-ctx.Done()
+	log.Println("Shutdown signal received, exiting...")
 
 	// 5. Attempt graceful shutdown with a timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// This gives both the HTTP server and Kafka consumer 5 seconds to finish inflight tasks.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	log.Println("Shutting down service...")
+	// A. Shutdown HTTP Server
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("Server forced to shutdown: %v", err)
+	} else {
+		log.Println("Server exiting gracefully")
 	}
-	log.Println("Server exiting gracefully")
+	// B. Close Kafka Consumer
+	// Commits any pending offsets and closes connections to the broker.
+	log.Println("Shutting down Kafka consumer...")
+	consumer.Close()
+	log.Println("Kafka Consumer shut down successfully")
+
+	log.Println("Booking Service exiting gracefully")
 }

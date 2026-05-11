@@ -1,24 +1,20 @@
 Bảng mapping event Kafka
 
-Event				      Publish bởi			  Consume bởi				      Action
-// user_request		  Gateway				    User Service			      Đăng ký/đăng nhập, phát JWT
+Event				            Publish bởi			  Consume bởi				      Action
+topic_booking_request		Booking Service		Booking Service         Book phòng, tạo booking tạm thời
 
-// room_query		    Gateway				    Room Service			      Lấy danh sách phòng, chi tiết phòng
-// booking_check		  Gateway				    Booking Service			    Kiểm tra trạng thái booking
-booking_request		Gateway				    Booking Service			    Book phòng, tạo booking tạm thời
+topic_booking_accepted	Booking Service		Room Service			      Cập nhật số lượng & trạng thái phòng, tạo booking chính thức
+topic_booking_accepted	Booking Service		Payment Service			    Bắt đầu xử lý thanh toán
+topic_booking_declined	Booking Service		Room Service			      Xử lý booking thất bại (ví dụ: phòng đã hết), cập nhật trạng thái phòng
+topic_booking_declined	Booking Service		Notification 	          Gửi email thông báo thất bại
 
-booking_accepted	Booking Service		Room Service			      Cập nhật số lượng & trạng thái phòng, tạo booking chính thức
-booking_accepted	Booking Service		Payment Service			    Bắt đầu xử lý thanh toán
-booking_declined	Booking Service		Room Service			      Xử lý booking thất bại (ví dụ: phòng đã hết), cập nhật trạng thái phòng
-booking_declined	Booking Service		Notification 	          Gửi email thông báo thất bại
+topic_payment_success		Payment Service		Booking Service        	Booking finalize - trạng thái booking SUCCESS
+topic_payment_success		Payment Service		Room Service           	Cập nhật trạng thái phòng (đã bán)
+topic_payment_success		Payment Service		Notification 	          Gửi email xác nhận
 
-payment_success		Payment Service		Booking Service        	Booking finalize - trạng thái booking SUCCESS
-payment_success		Payment Service		Room Service           	Cập nhật trạng thái phòng (đã bán)
-payment_success		Payment Service		Notification 	          Gửi email xác nhận
-
-payment_failed		Payment Service		Booking Service        	Rollback vé - trạng thái booking FAILED
-payment_failed		Payment Service		Room Service           	Cập nhật trạng thái phòng (hủy bán)
-payment_failed		Payment Service		Notification 	          Gửi email báo lỗi
+topic_payment_failed		Payment Service		Booking Service        	Rollback vé - trạng thái booking FAILED
+topic_payment_failed		Payment Service		Room Service           	Cập nhật trạng thái phòng (hủy bán)
+topic_payment_failed		Payment Service		Notification 	          Gửi email báo lỗi
 
 
 {

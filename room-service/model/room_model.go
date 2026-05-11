@@ -24,11 +24,14 @@ const (
 	StatusAvailable   RoomStatus = "available"
 	StatusBooked      RoomStatus = "booked"
 	StatusMaintenance RoomStatus = "maintenance"
+	// PENDING status for rooms that are in the process of being booked but not yet confirmed..
+	// This can help prevent race conditions where multiple users try to book the same room at the same time.
+	StatusPendingReservation RoomStatus = "pending_reservation" //TODO: consider remove
 )
 
 func (s RoomStatus) IsValid() bool {
 	switch s {
-	case StatusAvailable, StatusBooked, StatusMaintenance:
+	case StatusAvailable, StatusBooked, StatusMaintenance, StatusPendingReservation:
 		return true
 	}
 	return false
