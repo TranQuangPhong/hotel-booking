@@ -3,13 +3,13 @@
 3. Room service
     3.1. HTTP APIs - done
     3.2. Kong integration - pending
-    3.3. Subscribe Saga - pending
+    3.3. Subscribe Saga - doing
 4. Booking service
     4.1. Model design - done
     4.2. HTTP APIs - done
     4.3. Kong integration - done
     4.4. Kafka setup - done
-    4.5. Publish/subscribe - done
+    4.5. Publish/subscribe - doing
 5. Payment service
 6. Notify service
 
@@ -30,7 +30,9 @@
 
 
 Next: 4.4 --> 3.3
-    - Room service - Kafka config to subscribe
-    - Booking service - check room status
-        + Full Saga: booking --> create emp booking --> produces to Room service --> reserves room --> produces to booking --> payment
-        + 
+    - Impl new design, happy path
+        + Booking service: Create tmp booking, publish to booking_created
+        + Room service:
+            + Design DB model for room status
+            + Subscribe booking_created
+            + 

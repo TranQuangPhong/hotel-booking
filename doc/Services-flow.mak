@@ -1,51 +1,55 @@
 🔄 Luồng đi chính (CQRS pattern & event driven / may be upgrade to event-sourcing later)
 
-I. Write flow (asynchronous qua Kafka)
-1. Client → Gateway → Kafka
+I. Write flow (incoming HTTP request - sync & services communication via Kafka - async)
+1. Client → Gateway → services
 - User gửi request (login, xem sự kiện, đặt phòng).
-- Gateway verify JWT. Nếu token hợp lệ, Gateway push request vào Kafka (topic tương ứng).
+- Gateway verify JWT. Nếu token hợp lệ, route to services.
 - Payload message gồm: userId, roles, traceId, requestData.
 
-3. Booking Service
-- Consume từ Kafka topic booking-request.
-- Giữ phòng tạm trong Redis.
-- Sau khi confirm, publish sang Kafka topic booking_accepted (hoặc booking_declined).
+2. Booking Service
+- Nhận request đặt phòng, create booking order.
+- Publish: topic booking_created.
 
-4. Payment Service
-- Consume từ Kafka topic booking_accepted.
+3. Room Service
+- Consume: topic booking_created.
+- Kiểm tra tình trạng phòng:
+	+ Nếu phòng còn → giữ phòng trong Redis (TTL)
+- Publish: topic room_reservation_events (both success & failure).
+- Consume: topic payment_events -> update final room status (đã bán / hủy bán).
+
+4.1. Payment Service
+- Consume: topic room_reservation_events.
 - Xử lý thanh toán.
-- Publish kết quả sang Kafka topic payment_success, payment_failed.
+- Publish: topic payment_events.
+
+4.2. Booking Service
+- Consume: topic & update trạng thái booking:
+	+ room_reservation_events (step 4) -> create booking chính thức.
+	+ payment_events (step 5) -> final booking (SUCCESS/FAILED).
 
 5. Notification Service
-- Consume từ Kafka topic payment_success, payment_failed.
-- Gửi email/notification cho user.
+- Consume: topic room_reservation_events (step 4) -> notify nếu reservation fails (ví dụ: phòng đã hết).
+- Consume: topic payment_events (step 5) -> gửi email/notification cho user.
 
-6.1. Room Service
-- Consume từ Kafka topic & cap nhật trạng thái phòng:
-    + booking_accepted (step 3)
-	+ booking_declined (step 3)
-	+ payment_success (step 4)
-	+ payment_failed (step 4).
-6.2. Booking Service
-- Consume từ Kafka topic & cập nhật trạng thái booking:
-	+ payment_failed (step 4) → rollback (xoá phòng trong Redis)
-	+ payment_success (step 4).
 
 *** Luồng lỗi minh họa (Saga choreography)
-- User đặt phòng → Booking giữ phòng trong Redis.
-- Booking publish “booking_accepted”.
-- Payment xử lý, nhưng thất bại.
-- Payment publish “payment_failed”.
-- Booking consume “payment_failed” → xóa phòng trong Redis.
-- Notification consume “payment_failed” → gửi email báo lỗi cho user.
+- User đặt phòng → Booking create booking order.
+- Booking publish “booking_created”.
+- Room consume “booking_created” → kiểm tra phòng.
+	+ Phòng còn → giữ phòng trong Redis, publish room_reservation_events.
+- Payment xử lý, nhưng thất bại -> publish FAILED result to topic "payment_events".
+- Room consume “payment_events” → rollback trạng thái phòng -> available.
+- Booking consume “payment_events” → final booking status FAILED.
+- Notification consume “payment_events” → gửi email báo lỗi cho user.
 
 Rollback với Saga (Choreography qua Kafka)
-- Payment Service: Publish payment_success hoặc payment_failed.
-- Booking Service: Nếu nhận event payment_failed → rollback phòng trong Redis.
-- Room Service: Nếu nhận event booking_declined hoặc payment_failed → cập nhật trạng thái phòng (available).
+- Room service: Publish “room_reservation_events” sau khi check status / or reservation.
+- Payment Service: Publish “payment_events”.
+- Booking Service: Nếu payment FAILED / reservation failed (room not available) → rollback booking trong DB.
+- Room Service: Nếu payment FAILED → rollback trạng thái phòng (available).
 - Notification Service:
-	+ Nếu payment_success → gửi email xác nhận.
-	+ Nếu payment_failed → gửi email báo lỗi.
+	+ Nếu payment SUCCESS → gửi email xác nhận.
+	+ Nếu payment FAILED → gửi email báo lỗi.
 
 
 II. Read flow (synchronous rest API)

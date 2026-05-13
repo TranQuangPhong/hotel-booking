@@ -1,20 +1,15 @@
 Bảng mapping event Kafka
 
 Event				            Publish bởi			  Consume bởi				      Action
-topic_booking_request		Booking Service		Booking Service         Book phòng, tạo booking tạm thời
+booking_created		      Booking Service		Room Service            Check trạng thái phòng, tạm giữ phòng
 
-topic_booking_accepted	Booking Service		Room Service			      Cập nhật số lượng & trạng thái phòng, tạo booking chính thức
-topic_booking_accepted	Booking Service		Payment Service			    Bắt đầu xử lý thanh toán
-topic_booking_declined	Booking Service		Room Service			      Xử lý booking thất bại (ví dụ: phòng đã hết), cập nhật trạng thái phòng
-topic_booking_declined	Booking Service		Notification 	          Gửi email thông báo thất bại
+room_reservation_events	Room Service   	  Booking Service			    Tạo booking chính thức
+                                          Payment Service			    Bắt đầu xử lý thanh toán
+                                          Notification			      Notify khi thất bại (ví dụ: phòng đã hết)
 
-topic_payment_success		Payment Service		Booking Service        	Booking finalize - trạng thái booking SUCCESS
-topic_payment_success		Payment Service		Room Service           	Cập nhật trạng thái phòng (đã bán)
-topic_payment_success		Payment Service		Notification 	          Gửi email xác nhận
-
-topic_payment_failed		Payment Service		Booking Service        	Rollback vé - trạng thái booking FAILED
-topic_payment_failed		Payment Service		Room Service           	Cập nhật trạng thái phòng (hủy bán)
-topic_payment_failed		Payment Service		Notification 	          Gửi email báo lỗi
+payment_events		      Payment Service		Booking Service        	Booking finalize - trạng thái booking SUCCESS/FAILED
+                                      		Room Service           	Cập nhật trạng thái phòng (đã bán) / rollback (hủy bán)
+                                      		Notification 	          Gửi email xác nhận / hoặc thông báo lỗi
 
 
 {

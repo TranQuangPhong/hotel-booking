@@ -31,4 +31,20 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "9099:8080"
+    depends_on:
+      - broker
+    environment:
+      # Cấu hình kết nối tới Cluster
+      - KAFKA_CLUSTERS_0_NAME=Local-KRaft
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:29092
+      # Cho phép UI tạo/xóa topic trực tiếp
+      - KAFKA_CLUSTERS_0_READONLY=false
+      # Kết nối JMX để xem biểu đồ CPU/Ram của Broker
+      - KAFKA_CLUSTERS_0_JMXHOST=broker
+      - KAFKA_CLUSTERS_0_JMXPORT=9101

@@ -1,7 +1,7 @@
 🧩 Các module & chức năng
 1. Gateway (Open Source: Kong/Traefik/NGINX Ingress)
 - Entry point cho toàn bộ request từ client.
-- Verify JWT (stateless). Sau khi authen thành công, push request vào Kafka (topic tương ứng).
+- Verify JWT (stateless) + Route request.
 - Không giữ session, chỉ làm chốt chặn bảo mật.
 
 2. User Service (Java + Postgres)
@@ -12,32 +12,25 @@
 3.Room Service (Go + Redis + Kafka + MongoDB)
 - CRUD phòng (tạo, sửa, xoá, xem).
 - Lưu dữ liệu phòng trong MongoDB.
-- Consume từ Kafka topic & cập nhật trạng thái phòng:
-	+ booking_accepted
-	+ booking_declined
-	+ payment_failed
-	+ payment_success.
+- Consume từ Kafka topic & update trạng thái phòng:
+	+ booking_created → tạm giữ phòng trong Redis (TTL), update trạng thái phòng thành pending.
+	+ payment_events -> update trạng thái phòng (đã bán / hủy bán).
+- Publish message: topic room_reservation_events sau khi check status / or reservation.
 
 4. Booking Service (Go + Redis + Kafka + MongoDB)
-- Kiểm tra tình trạng phòng (available, booked, pending).
-- Xử lý đặt phòng.
-- Redis giữ phòng tạm thời (TTL).
-- Sau khi confirm, publish message sang Kafka topic booking_accepted.
-- Nếu có lỗi (ví dụ: phòng đã hết) → publish booking_declined.
-- Consume từ Kafka topic & cập nhật trạng thái booking
-	+ booking_request
-	+ payment_failed → rollback (xoá phòng trong Redis)
-	+ payment_success.
+- CRUD booking (tạo, sửa, xoá, xem).
+- Tạo booking order -> publish message: topic booking_created.
+- Consume từ Kafka topic & update trạng thái booking
+	+ room_reservation_events -> tạo booking chính thức.
+	+ payment_events -> finalize booking (SUCCESS/FAILED).
 
 5. Payment Service (Go + Kafka + MongoDB)
-- Consume từ Kafka topic booking_accepted.
-- Xử lý thanh toán (mock hoặc tích hợp Stripe/PayPal).
-- Publish kết quả sang Kafka topic payment_success, payment_failed.
+- Consume từ Kafka topic room_reservation_events -> xử lý thanh toán (mock hoặc tích hợp Stripe/PayPal).
+- Publish kết quả: topic payment_events.
 
 6. Notification Service (Go + Kafka + MongoDB)
-- Consume từ Kafka topic payment_success, payment_failed, booking_declined.
-- Gửi email/notification cho user.
-- Nếu Booking/Payment thất bại → gửi thông báo lỗi.
+- Consume từ Kafka topic room_reservation_events -> notify nếu reservation fails (ví dụ: phòng đã hết).
+- Consume từ Kafka topic payment_events -> notify kết quả thanh toán (thành công/thất bại).
 
 7. Database Layer
 - Postgres: dữ liệu quan hệ (User).
@@ -45,11 +38,11 @@
 - Redis: giữ phòng tạm thời, xử lý timeout, cache dữ liệu tra cứu.
 
 🎯 Tóm lại
-Gateway: authen + push vào Kafka.
+Gateway: authen + route request.
 Kafka: backbone cho toàn bộ giao tiếp giữa service.
 User Service: phát hành JWT.
-Room Service: quản lý phòng.
-Booking Service: đặt phòng, Redis giữ phòng tạm, hiển thị trạng thái booking.
+Room Service: quản lý phòng, reservation (source of truth)
+Booking Service: create/update trạng thái booking.
 Payment Service: xử lý thanh toán.
 Notification Service: gửi thông báo.
 MongoDB: lưu dữ liệu chính.
