@@ -36,35 +36,3 @@ func (s RoomStatus) IsValid() bool {
 	}
 	return false
 }
-
-// Kafka event payload
-type KafkaEvent struct {
-	TraceID   string       `json:"traceId"`
-	EventType string       `json:"eventType"`
-	Timestamp time.Time    `json:"timestamp"`
-	User      UserBlock    `json:"userBlock"`
-	Payload   PayloadBlock `json:"payloadBlock"`
-	Saga      SagaBlock    `json:"sagaBlock"`
-}
-
-type SagaBlock struct {
-	Step         string `json:"step"`
-	Status       string `json:"status"`       //pending, completed, failed
-	Compensation string `json:"compensation"` //compensation action if failed
-}
-
-type UserBlock struct {
-	UserID string   `json:"userId"`
-	Roles  []string `json:"roles"`
-	Email  string   `json:"email"`
-}
-
-type PayloadBlock struct {
-	EventID  string  `json:"eventId"`
-	RoomID   string  `json:"roomId"`
-	CheckIn  string  `json:"checkIn"`
-	CheckOut string  `json:"checkOut"`
-	Guests   int     `json:"guests"`
-	Price    float64 `json:"price"`
-	Currency string  `json:"currency"`
-}

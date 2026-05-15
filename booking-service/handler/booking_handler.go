@@ -1,8 +1,9 @@
 package handler
 
 import (
+	"booking/booking-service/event"
+	"booking/booking-service/handler/dto"
 	"booking/booking-service/kafka"
-	"booking/booking-service/model"
 	"booking/booking-service/service"
 	"context"
 	"fmt"
@@ -42,24 +43,56 @@ func (h *BookingHandler) GetBookingsByUserID(c *gin.Context) {
 	c.JSON(200, bookings)
 }
 
-// Quickly publish a message to Kafka without waiting for DB confirmation.
-// The consumer will handle the actual business logic and DB save.
+// Quickly save temp booking into DB.
+// Publish msg to Room service to actually reserve room.
+// TODO: to use outbox with CDC (next phase)
 func (h *BookingHandler) CreateBooking(c *gin.Context) {
-	var booking *model.Booking //TODO: consider using a separate DTO for create requests
-	if err := c.ShouldBindJSON(&booking); err != nil {
+	var req *dto.CreateBookingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": fmt.Errorf("invalid request body: %w", err).Error()})
 		return
 	}
 
-	//Publish kafka message here instead of calling service method directly
+	// Convert DTO to domain model
+	booking := req.ToModel()
+
+	// Create temp booking immediately
+	bookingID, err := h.service.CreateBooking(c.Request.Context(), booking)
+	if err != nil {
+		c.JSON(500, gin.H{"error": fmt.Errorf("failed to create booking: %w", err).Error()})
+		return
+	}
+	msg := event.EventEnvelope[event.BookingCreatedMsg]{
+		TraceID:   "0", //TODO: generate real trace ID for distributed tracing
+		EventType: "booking_created",
+		Producer:  "booking-service",
+		Timestamp: time.Now().UTC().Format(time.RFC3339), //Explicitly use UTC and RFC3339 for timestamps to ensure cross-service compatibility
+		Data: event.BookingCreatedMsg{
+			BookingID: bookingID,
+			User: event.User{
+				UserID:         booking.User.UserID,
+				Name:           booking.User.Name,
+				Email:          booking.User.Email,
+				PhoneNumber:    booking.User.PhoneNumber,
+				NumberOfGuests: booking.User.NumberOfGuests,
+			},
+			RoomID:       booking.Room.RoomID,
+			CheckInDate:  booking.CheckInDate.Format(time.DateOnly),
+			CheckOutDate: booking.CheckOutDate.Format(time.DateOnly),
+			CreatedAt:    booking.CreatedAt.Format(time.RFC3339), // Use RFC3339 for timestamps to ensure cross-service compatibility
+		},
+	}
+
+	// Publish kafka message
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 	defer cancel()
-	err := h.producer.PublishCreateBookingMessage(ctx, booking)
+	err = h.producer.PublishBookingCreated(ctx, msg)
 
 	if err != nil {
 		log.Printf("Failed to publish to Kafka: %v", err)
 		c.JSON(500, gin.H{"error": fmt.Errorf("Service temporarily unavailable: failed to create booking: %w", err).Error()})
 		return
 	}
-	c.JSON(201, gin.H{"message": "Booking created"})
+
+	c.JSON(201, gin.H{"message": "Booking created", "id": bookingID})
 }

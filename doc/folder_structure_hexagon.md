@@ -26,3 +26,21 @@ booking-service/
 │   └── logger/
 ├── go.mod
 └── go.sum
+
+OR:
+room-service/
+├── cmd/
+│   └── main.go           # Wires up DB, Kafka, and starts the app
+├── internal/
+│   ├── domain/           # Core logic (Room models, Bucket schemas)
+│   ├── service/          # Business logic (RoomService: Check availability, block slots)
+│   │   └── room_service.go
+│   ├── event/            # <--- PLACE IT HERE (The Data Contracts)
+│   │   ├── envelope.go   # EventEnvelope struct
+│   │   ├── booking.go    # BookingCreatedPayload struct
+│   │   └── inventory.go  # RoomReserved/Failed payloads
+│   └── infrastructure/   # External tools/drivers
+│       ├── database/     # MongoDB driver & repository logic
+│       └── kafka/        # Strictly Transport logic
+│           ├── consumer.go  # The Kafka claim loop that triggers RoomService
+│           └── producer.go  # Sends messages to Kafka

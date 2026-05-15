@@ -22,6 +22,7 @@
     - CDC + outbox pattern
     - Idempotence
     - Performance test
+    - Set timezone UTC for all modules
 
 11. Apply AI to gen FE
 12. Re-deploy
@@ -31,8 +32,10 @@
 
 Next: 4.4 --> 3.3
     - Impl new design, happy path
-        + Booking service: Create tmp booking, publish to booking_created
+        + Booking service:
+            + Update request body
+            + Reset DB to apply new model.Booking
         + Room service:
-            + Design DB model for room status
-            + Subscribe booking_created
-            + 
+            + Design DB model for room status - pending
+        + Test flow creating booking
+        
