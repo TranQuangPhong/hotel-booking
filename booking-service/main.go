@@ -27,7 +27,12 @@ func main() {
 		Username: "booking_service",
 		Password: "booking_service",
 	}
-	opts := options.Client().ApplyURI("mongodb://localhost:27028").SetAuth(credential)
+	opts := options.Client().
+		ApplyURI("mongodb://localhost:27028").
+		SetAuth(credential).
+		SetMaxPoolSize(5).
+		SetMaxConnecting(5).
+		SetMaxConnIdleTime(10 * time.Minute)
 	client, err := mongo.Connect(opts)
 	if err != nil {
 		log.Fatal("Failed to connect to MongoDB:", err)
@@ -44,8 +49,7 @@ func main() {
 	bookingService := service.NewBookingService(bookingRepo)
 	bookingProducer, err := kafka.NewBookingProducer([]string{kafka.BookingBrokerAddress})
 	if err != nil {
-		log.Fatal("Panic: Failed to create Kafka producer:", err)
-		return
+		log.Fatalf("Failed to create Kafka producer: %v", err)
 	}
 	bookingHandler := handler.NewBookingHandler(bookingService, bookingProducer)
 
@@ -73,9 +77,9 @@ func main() {
 	// 5. Initialize and Start the Kafka Consumer
 	log.Println("Kafka consumer starting ...")
 	brokers := []string{kafka.BookingBrokerAddress}
-	groupID := kafka.BookingRequestGroupID
-	topics := []string{kafka.BookingRequestTopic}
-	consumer, err := kafka.NewBookingConsumer(brokers, groupID, topics, bookingService)
+	groupID := kafka.RoomReservationEventsGroupID
+	topics := []string{kafka.RoomReservationEventsTopic}
+	consumer, err := kafka.NewRoomReservationConsumer(brokers, groupID, topics, bookingService)
 	if err != nil {
 		log.Fatalf("Failed to create Kafka consumer: %v", err)
 	}
@@ -88,23 +92,29 @@ func main() {
 	<-ctx.Done()
 	log.Println("Shutdown signal received, exiting...")
 
-	// 5. Attempt graceful shutdown with a timeout
+	// 7. Attempt graceful shutdown with a timeout
 	// This gives both the HTTP server and Kafka consumer 5 seconds to finish inflight tasks.
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log.Println("Shutting down service...")
 	// A. Shutdown HTTP Server
+	log.Println("Shutting down HTTP server...")
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		log.Printf("HTTP server forced to shutdown: %v", err)
 	} else {
-		log.Println("Server exiting gracefully")
+		log.Println("HTTP server exiting gracefully")
 	}
 	// B. Close Kafka Consumer
 	// Commits any pending offsets and closes connections to the broker.
 	log.Println("Shutting down Kafka consumer...")
 	consumer.Close()
-	log.Println("Kafka Consumer shut down successfully")
+	log.Println("Kafka consumer shut down successfully")
+
+	// C. Close Kafka Producer
+	// Flushes pending writes and closes connections to the broker.
+	log.Println("Shutting down Kafka producer...")
+	bookingProducer.Close()
+	log.Println("Kafka producer shut down successfully")
 
 	log.Println("Booking Service exiting gracefully")
 }

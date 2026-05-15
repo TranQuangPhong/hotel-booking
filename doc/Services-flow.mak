@@ -24,12 +24,12 @@ I. Write flow (incoming HTTP request - sync & services communication via Kafka -
 
 4.2. Booking Service
 - Consume: topic & update trạng thái booking:
-	+ room_reservation_events (step 4) -> create booking chính thức.
-	+ payment_events (step 5) -> final booking (SUCCESS/FAILED).
+	+ room_reservation_events (step 3) -> create booking chính thức.
+	+ payment_events (step 4.1) -> final booking (SUCCESS/FAILED).
 
 5. Notification Service
-- Consume: topic room_reservation_events (step 4) -> notify nếu reservation fails (ví dụ: phòng đã hết).
-- Consume: topic payment_events (step 5) -> gửi email/notification cho user.
+- Consume: topic room_reservation_events (step 3) -> notify nếu reservation fails (ví dụ: phòng đã hết).
+- Consume: topic payment_events (step 4.1) -> gửi email/notification cho user.
 
 
 *** Luồng lỗi minh họa (Saga choreography)

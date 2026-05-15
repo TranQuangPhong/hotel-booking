@@ -3,6 +3,7 @@ package repository
 import (
 	"booking/room-service/model"
 	"context"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -49,18 +50,26 @@ func (r *RoomRepository) GetRoomByID(ctx context.Context, id string) (*model.Roo
 	return &room, nil
 }
 
-// Insert document
-func (r *RoomRepository) CreateRoom(ctx context.Context, room *model.Room) error {
+// Create new room (for Admin or operator)
+func (r *RoomRepository) CreateRoom(ctx context.Context, room *model.Room) (string, error) {
 	room.CreatedAt = time.Now()
 	room.UpdatedAt = time.Now()
-	room.Status = "available"
 
-	_, err := r.collection.InsertOne(ctx, room)
-	return err
+	result, err := r.collection.InsertOne(ctx, room)
+	if err != nil {
+		return "", err
+	}
+
+	oid, ok := result.InsertedID.(bson.ObjectID)
+	if !ok {
+		return "", errors.New("failed to extract inserted ID")
+	}
+
+	return oid.Hex(), nil
 }
 
-// Update room status
-func (r *RoomRepository) UpdateRoomStatus(ctx context.Context, id string, status model.RoomStatus) error {
+// Update room master status (for Admin or operator)
+func (r *RoomRepository) UpdateRoomStatus(ctx context.Context, id string, status model.RoomMasterStatus) error {
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -73,7 +82,12 @@ func (r *RoomRepository) UpdateRoomStatus(ctx context.Context, id string, status
 			{Key: "updated_at", Value: time.Now()},
 		}},
 	}
-	_, err = r.collection.UpdateOne(ctx, filter, update)
-	return err
-
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return errors.New("room not found")
+	}
+	return nil
 }

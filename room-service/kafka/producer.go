@@ -1,7 +1,7 @@
 package kafka
 
 import (
-	"booking/booking-service/event"
+	"booking/room-service/event"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,12 +9,12 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
-//TODO: Ordering - idempotency - exactly-once semantics
-type BookingProducer struct {
+// TODO: Ordering - idempotency - exactly-once semantics
+type ReservationProducer struct {
 	client *kgo.Client
 }
 
-func NewBookingProducer(brokers []string) (*BookingProducer, error) {
+func NewReservationProducer(brokers []string) (*ReservationProducer, error) {
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.RequiredAcks(kgo.AllISRAcks()), //Strong consistency: wait for all in-sync replicas to acknowledge
@@ -23,17 +23,14 @@ func NewBookingProducer(brokers []string) (*BookingProducer, error) {
 		return nil, fmt.Errorf("failed to create Kafka client: %w", err)
 	}
 
-	return &BookingProducer{client: cl}, nil
+	return &ReservationProducer{client: cl}, nil
 }
 
-// PublishBookingCreated builds a lean Kafka message from the domain model
-// and publishes it to the booking-request topic.
-func (p *BookingProducer) PublishBookingCreated(ctx context.Context, msg event.EventEnvelope[event.BookingCreatedMsg]) error {
-
-	return p.publish(ctx, BookingCreatedTopic, msg)
+func (p *ReservationProducer) PublishReservationResult(ctx context.Context, msg event.EventEnvelope[event.ReservationResultMsg]) error {
+	return p.publish(ctx, RoomReservationEventsTopic, msg)
 }
 
-func (p *BookingProducer) publish(ctx context.Context, topic string, msg any) error {
+func (p *ReservationProducer) publish(ctx context.Context, topic string, msg any) error {
 	payload, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)
@@ -46,6 +43,6 @@ func (p *BookingProducer) publish(ctx context.Context, topic string, msg any) er
 }
 
 // Close gracefully shuts down the producer
-func (p *BookingProducer) Close() {
+func (p *ReservationProducer) Close() {
 	p.client.Close()
 }

@@ -18,10 +18,11 @@
 9. CICD
 10. Upgrade
     - Refactor hexagon structure + Saga msg structure
-    - Monitoring
+    - Monitoring, logging
     - CDC + outbox pattern
     - Idempotence
     - Performance test
+    - Set timezone UTC for all modules
 
 11. Apply AI to gen FE
 12. Re-deploy
@@ -31,8 +32,7 @@
 
 Next: 4.4 --> 3.3
     - Impl new design, happy path
-        + Booking service: Create tmp booking, publish to booking_created
-        + Room service:
-            + Design DB model for room status
-            + Subscribe booking_created
-            + 
+        + Reset DB
+        + Test flow create room
+        + Test flow creating booking
+        

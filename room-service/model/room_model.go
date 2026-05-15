@@ -8,63 +8,43 @@ import (
 
 // Room collection in MongoDB
 type Room struct {
-	ID         bson.ObjectID `bson:"_id,omitempty" json:"id"`
-	RoomNumber string        `bson:"room_number" json:"room_number"`
-	Type       string        `bson:"type" json:"type"` //Standard, Deluxe, Suite
-	Price      float64       `bson:"price" json:"price"`
-	Currency   string        `bson:"currency" json:"currency"` //USD, EUR, etc.
-	Status     RoomStatus    `bson:"status" json:"status"`     //available, booked, maintenance
-	CreatedAt  time.Time     `bson:"created_at" json:"created_at"`
-	UpdatedAt  time.Time     `bson:"updated_at" json:"updated_at"`
+	ID         bson.ObjectID    `bson:"_id,omitempty" json:"id"`
+	RoomNumber string           `bson:"room_number" json:"room_number"`
+	Type       RoomType         `bson:"type" json:"type"`             //Standard, Deluxe, Suite
+	Status     RoomMasterStatus `bson:"status" json:"status"`         //Master status
+	BasePrice  float64          `bson:"base_price" json:"base_price"` //For initialization only. Inventory price overrides this.
+	Currency   string           `bson:"currency" json:"currency"`     //USD, EUR, etc
+	CreatedAt  time.Time        `bson:"created_at" json:"created_at"`
+	UpdatedAt  time.Time        `bson:"updated_at" json:"updated_at"`
 }
 
-type RoomStatus string
+type RoomMasterStatus string
+type RoomType string
 
 const (
-	StatusAvailable   RoomStatus = "available"
-	StatusBooked      RoomStatus = "booked"
-	StatusMaintenance RoomStatus = "maintenance"
-	// PENDING status for rooms that are in the process of being booked but not yet confirmed..
-	// This can help prevent race conditions where multiple users try to book the same room at the same time.
-	StatusPendingReservation RoomStatus = "pending_reservation" //TODO: consider remove
+	StatusActive   RoomMasterStatus = "ACTIVE"   // Room is open for business
+	StatusInactive RoomMasterStatus = "INACTIVE" // Out of order indefinitely
+	StatusArchived RoomMasterStatus = "ARCHIVED" // Physically removed/deleted
 )
 
-func (s RoomStatus) IsValid() bool {
-	switch s {
-	case StatusAvailable, StatusBooked, StatusMaintenance, StatusPendingReservation:
+const (
+	TypeStandard RoomType = "STANDARD"
+	TypeDeluxe   RoomType = "DELUXE"
+	TypeSuite    RoomType = "SUITE"
+)
+
+func (t RoomType) IsValid() bool {
+	switch t {
+	case TypeStandard, TypeDeluxe, TypeSuite:
 		return true
 	}
 	return false
 }
 
-// Kafka event payload
-type KafkaEvent struct {
-	TraceID   string       `json:"traceId"`
-	EventType string       `json:"eventType"`
-	Timestamp time.Time    `json:"timestamp"`
-	User      UserBlock    `json:"userBlock"`
-	Payload   PayloadBlock `json:"payloadBlock"`
-	Saga      SagaBlock    `json:"sagaBlock"`
-}
-
-type SagaBlock struct {
-	Step         string `json:"step"`
-	Status       string `json:"status"`       //pending, completed, failed
-	Compensation string `json:"compensation"` //compensation action if failed
-}
-
-type UserBlock struct {
-	UserID string   `json:"userId"`
-	Roles  []string `json:"roles"`
-	Email  string   `json:"email"`
-}
-
-type PayloadBlock struct {
-	EventID  string  `json:"eventId"`
-	RoomID   string  `json:"roomId"`
-	CheckIn  string  `json:"checkIn"`
-	CheckOut string  `json:"checkOut"`
-	Guests   int     `json:"guests"`
-	Price    float64 `json:"price"`
-	Currency string  `json:"currency"`
+func (s RoomMasterStatus) IsValid() bool {
+	switch s {
+	case StatusActive, StatusInactive, StatusArchived:
+		return true
+	}
+	return false
 }

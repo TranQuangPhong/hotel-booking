@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"booking/room-service/handler/dto"
 	"booking/room-service/model"
 	"booking/room-service/service"
 	"fmt"
@@ -40,26 +41,28 @@ func (h *RoomHandler) GetRoomByID(c *gin.Context) {
 
 // Create new room
 func (h *RoomHandler) CreateRoom(c *gin.Context) {
-	var room *model.Room //TODO: consider using a separate DTO for create requests
-	if err := c.ShouldBindJSON(&room); err != nil {
+	var req *dto.CreateRoomRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": fmt.Errorf("invalid request body: %w", err).Error()})
 		return
 	}
-	err := h.service.CreateRoom(c.Request.Context(), room)
+
+	room := req.ToModel()
+	err := h.service.CreateRoomWithInventory(c.Request.Context(), room)
 	if err != nil {
 		c.JSON(500, gin.H{"error": fmt.Errorf("failed to create room: %w", err).Error()})
 		return
 	}
-	c.JSON(201, gin.H{"message": "Room created"})
+	c.JSON(201, gin.H{"message": "Room & inventory created"})
 }
 
-// Update room status
+// Update room master status
 func (h *RoomHandler) UpdateRoomStatus(c *gin.Context) {
 
 	roomID := c.Param("id")
 	// Define a small DTO for the request body
 	var input struct {
-		Status model.RoomStatus `json:"status" binding:"required"`
+		Status model.RoomMasterStatus `json:"status" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
