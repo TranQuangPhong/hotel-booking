@@ -29,7 +29,7 @@ func main() {
 		Password: "room_service",
 	}
 	opts := options.Client().
-		ApplyURI("mongodb://localhost:27027").
+		ApplyURI("mongodb://mongo-room-db:27027/?replicaSet=rs-room").
 		SetAuth(credential).
 		SetMaxPoolSize(5).
 		SetMaxConnecting(5).
@@ -45,10 +45,10 @@ func main() {
 	}()
 
 	// 3. Initialize repository, service, and handler
-	roomsCollection := client.Database("booking").Collection("rooms")
+	roomsCollection := client.Database("hotel-booking-system").Collection("rooms")
 	roomRepo := repository.NewRoomRepository(roomsCollection)
 
-	inventoryCollection := client.Database("booking").Collection("inventory")
+	inventoryCollection := client.Database("hotel-booking-system").Collection("inventory")
 	inventoryRepo := repository.NewInventoryRepository(inventoryCollection)
 
 	roomService := service.NewRoomService(client, roomRepo, inventoryRepo)
