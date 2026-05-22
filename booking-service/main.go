@@ -28,7 +28,7 @@ func main() {
 		Password: "booking_service",
 	}
 	opts := options.Client().
-		ApplyURI("mongodb://localhost:27028").
+		ApplyURI("mongodb://mongo-booking-db:27028").
 		SetAuth(credential).
 		SetMaxPoolSize(5).
 		SetMaxConnecting(5).
@@ -44,7 +44,7 @@ func main() {
 	}()
 
 	// 3. Initialize repository, service, and handler
-	bookingsCollection := client.Database("booking").Collection("bookings")
+	bookingsCollection := client.Database("hotel-booking-system").Collection("bookings")
 	bookingRepo := repository.NewBookingRepository(bookingsCollection)
 	bookingService := service.NewBookingService(bookingRepo)
 	bookingProducer, err := kafka.NewBookingProducer([]string{kafka.BookingBrokerAddress})

@@ -1,27 +1,89 @@
-version: '3'
-
 services:
   mongo-room-db:
     image: mongodb/mongodb-community-server
+    container_name: mongo-room-db
     restart: always
+    # Default entrypoint handles user creation from MONGODB_INITDB_* env vars.
+    # command args are passed to mongod after init completes.
+    # Run on internal port 27027 (same as public) for consistent addressing.
+    command: ["--replSet", "rs-room", "--bind_ip_all", "--port", "27027", "--keyFile", "/tmp/replica-keyfile.key"]
     ports:
-       - 27027:27017
+       - 27027:27027
     environment:
       MONGODB_INITDB_ROOT_USERNAME: room_service
       MONGODB_INITDB_ROOT_PASSWORD: room_service
+    networks:
+      - hotel-booking-network
+    # healthcheck:
+    #   test: mongosh --port 27027 -u room_service -p room_service --authenticationDatabase admin --eval "db.adminCommand('ping')" --quiet
+    #   interval: 10s
+    #   timeout: 10s
+    #   retries: 10
+    #   start_period: 30s
     volumes:
       - type: bind
         source: ./room-service/data
         target: /data/db
+      - type: bind
+        source: ./room-service/auth/replica-keyfile.key.origin
+        target: /data/keyfile-source/replica-keyfile.key
+        read_only: true
+      - type: bind
+        source: ./room-service/auth/setup-keyfile.sh
+        target: /docker-entrypoint-initdb.d/setup-keyfile.sh #Set permissions and copy keyfile to /tmp for mongod to use
+        read_only: true
+
+  # Comment out as sometimes error to initiate replica set if mongo-room-db is not fully ready, even with healthcheck.
+  # One-shot container: initiates replica set after mongo-room-db is healthy
+  # mongo-room-init:
+  #   image: mongodb/mongodb-community-server
+  #   container_name: mongo-room-init
+  #   depends_on:
+  #     mongo-room-db:
+  #       condition: service_healthy
+  #   restart: "no"
+  #   networks:
+  #     - hotel-booking-network
+  #   entrypoint:
+  #     - mongosh
+  #     - --host
+  #     - mongo-room-db:27027
+  #     - -u
+  #     - room_service
+  #     - -p
+  #     - room_service
+  #     - --authenticationDatabase
+  #     - admin
+  #     - --eval
+  #     - |
+  #       try {
+  #         var status = rs.status();
+  #         print('Replica set already initiated: ' + status.set);
+  #       } catch(e) {
+  #         print('Initiating replica set...');
+  #         rs.initiate({_id: 'rs-room', members: [{_id: 0, host: 'mongo-room-db:27027'}]});
+  #         print('Replica set initiated successfully');
+  #       }
+
   mongo-booking-db:
     image: mongodb/mongodb-community-server
+    container_name: mongo-booking-db
     restart: always
+    # Run on internal port 27028 (same as public) for consistent addressing.
+    # Add host entry "127.0.0.1 mongo-booking-db" to Windows hosts file for local dev.
+    # command: ["--port", "27028", "--bind_ip_all"]
     ports:
        - 27028:27017
     environment:
       MONGODB_INITDB_ROOT_USERNAME: booking_service
       MONGODB_INITDB_ROOT_PASSWORD: booking_service
+    networks:
+      - hotel-booking-network
     volumes:
       - type: bind
         source: ./booking-service/data
         target: /data/db
+
+networks:
+  hotel-booking-network:
+    driver: bridge
