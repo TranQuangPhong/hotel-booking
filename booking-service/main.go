@@ -55,10 +55,10 @@ func main() {
 
 	// 4. Start the HTTP server
 	router := bookingHandler.Bookingrouter()
-	router.GET("/api/v1", func(c *gin.Context) {
+	router.GET("/bookings", func(c *gin.Context) {
 		c.String(200, "Welcome to Booking Service")
 	})
-	router.GET("/api/v1/health", func(c *gin.Context) {
+	router.GET("/bookings/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "healthy"})
 	})
 

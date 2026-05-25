@@ -7,7 +7,7 @@ import (
 func (h *RoomHandler) RoomRouter() *gin.Engine {
 	r := gin.Default()
 
-	v1 := r.Group("/api/v1/rooms")
+	v1 := r.Group("/rooms/api/v1")
 	{
 		// Room routes
 		v1.GET("/", h.GetAllRooms)         // Get all rooms

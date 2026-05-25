@@ -32,7 +32,6 @@
 
 Next: 4.4 --> 3.3
     - Impl new design, happy path
-        + Reset DB
-        + Test flow create room
+        + Test flow create room --> Add logging
         + Test flow creating booking
         

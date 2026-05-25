@@ -1,0 +1,767 @@
+{
+  "info": {
+    "_postman_id": "fcab33c3-b89f-46c2-a806-e4e9925d53c0",
+    "name": "Booking app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "16233051",
+    "_collection_link": "https://go.postman.co/collection/16233051-fcab33c3-b89f-46c2-a806-e4e9925d53c0?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "User-service",
+      "item": [
+        {
+          "name": "Origin",
+          "item": [
+            {
+              "name": "User register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"phong\",\r\n    \"password\": \"phong\",\r\n    \"email\": \"phong@gmail.com\",\r\n    \"role\": \"ADMIN\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8181/api/user/register",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8181",
+                  "path": [
+                    "api",
+                    "user",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "User login",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"phong\",\r\n    \"password\": \"phong\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8181/api/user/login",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8181",
+                  "path": [
+                    "api",
+                    "user",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "User check token",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc4NDE1NTAzLCJleHAiOjE3Nzg0MTkxMDN9.nAKlS3PbM9T6Qz8NvlPJQZCeWz_PH_0UEzESGk51l-E",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8181/api/user/whoami",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8181",
+                  "path": [
+                    "api",
+                    "user",
+                    "whoami"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Kong",
+          "item": [
+            {
+              "name": "Kong/User register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"beckham\",\r\n    \"password\": \"beckham\",\r\n    \"email\": \"beckham@gmail.com\",\r\n    \"role\": \"USER\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8000/api/user/register",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "user",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/User login",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"ronaldo\",\r\n    \"password\": \"ronaldo\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8000/api/user/login",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "user",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/User check token",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NzQyOTAzMDAsImV4cCI6MTc3NDI5MzkwMH0.XwYZvpEjQKuRXtWTcYoS6ja3rPgEEdev_UJR5RmYdHI",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/api/user/whoami",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "user",
+                    "whoami"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Room-service",
+      "item": [
+        {
+          "name": "Origin",
+          "item": [
+            {
+              "name": "home page",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8182/rooms",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8182",
+                  "path": [
+                    "rooms"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "health",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8182/rooms/health",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8182",
+                  "path": [
+                    "rooms",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get all rooms",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8182/rooms/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8182",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get room by id",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8182/rooms/api/v1/6a148ea03f27d647f434c927",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8182",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1",
+                    "6a148ea03f27d647f434c927"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create room",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"room_number\": \"101\",\r\n    \"type\": \"Standard\",\r\n    \"base_price\": 100,\r\n    \"currency\": \"USD\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8182/rooms/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8182",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "update room status",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"status\": \"available\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8182/rooms/api/v1/6a148ea03f27d647f434c927",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8182",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1",
+                    "6a148ea03f27d647f434c927"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Kong",
+          "item": [
+            {
+              "name": "Kong/home",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/rooms",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "rooms"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/health",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/rooms/health",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "rooms",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/get all rooms",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/rooms/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/get room by id",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/rooms/api/v1/6a148ea03f27d647f434c927",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1",
+                    "6a148ea03f27d647f434c927"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/create room",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"room_number\": \"101\",\r\n    \"type\": \"Standard\",\r\n    \"base_price\": 100,\r\n    \"currency\": \"USD\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8000/rooms/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/update room status",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"status\": \"ACTIVE\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8000/rooms/api/v1/6a148ea03f27d647f434c927",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "rooms",
+                    "api",
+                    "v1",
+                    "6a148ea03f27d647f434c927"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Booking-service",
+      "item": [
+        {
+          "name": "Origin",
+          "item": [
+            {
+              "name": "home page",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8183/bookings",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8183",
+                  "path": [
+                    "bookings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "health",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8183/bookings/health",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8183",
+                  "path": [
+                    "bookings",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get booking by id",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8183/bookings/api/v1/69f0f700dad7747927997cc1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8183",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1",
+                    "69f0f700dad7747927997cc1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get bookings by user",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8183/bookings/api/v1/user/user_99",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8183",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1",
+                    "user",
+                    "user_99"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create booking",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"user\": {\r\n    \"user_id\": \"ronaldo\",\r\n    \"name\": \"ronaldo\",\r\n    \"email\": \"ronaldo@gmail.com\",\r\n    \"phone_number\": \"0802521111\",\r\n    \"number_of_guests\": 3\r\n  },\r\n  \"room\": {\r\n    \"room_id\": \"69ceb54559194ad0b7fae538\",\r\n    \"room_number\": \"301\",\r\n    \"type\": \"Deluxe\",\r\n    \"price\": 210,\r\n    \"currency\": \"USD\"\r\n  },\r\n  \"check_in_date\": \"2026-05-11T14:30:00Z\",\r\n  \"check_out_date\": \"2026-05-14T11:30:00Z\",\r\n  \"total_amount\": 630,\r\n  \"currency\": \"USD\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8183/bookings/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8183",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Kong",
+          "item": [
+            {
+              "name": "Kong/home page",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/bookings/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/get booking by id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/bookings/api/v1/69f0f700dad7747927997cc1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1",
+                    "69f0f700dad7747927997cc1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/get bookings by user",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "localhost:8000/bookings/api/v1/user/user_99",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1",
+                    "user",
+                    "user_99"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Kong/create booking",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"user\": {\r\n    \"user_id\": \"ronaldo\",\r\n    \"name\": \"ronaldo\",\r\n    \"email\": \"ronaldo@gmail.com\",\r\n    \"phone_number\": \"0802521111\",\r\n    \"number_of_guests\": 3\r\n  },\r\n  \"room\": {\r\n    \"room_id\": \"69ceb54559194ad0b7fae538\",\r\n    \"room_number\": \"301\",\r\n    \"type\": \"Deluxe\",\r\n    \"price\": 210,\r\n    \"currency\": \"USD\"\r\n  },\r\n  \"check_in_date\": \"2026-05-11T14:30:00Z\",\r\n  \"check_out_date\": \"2026-05-14T11:30:00Z\",\r\n  \"total_amount\": 630,\r\n  \"currency\": \"USD\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "localhost:8000/bookings/api/v1",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "bookings",
+                    "api",
+                    "v1"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

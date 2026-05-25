@@ -29,7 +29,7 @@ func main() {
 		Password: "room_service",
 	}
 	opts := options.Client().
-		ApplyURI("mongodb://mongo-room-db:27027/?replicaSet=rs-room").
+		ApplyURI("mongodb://mongo-room-db:27027/?replicaSet=rs-room&readPreference=secondaryPreferred").
 		SetAuth(credential).
 		SetMaxPoolSize(5).
 		SetMaxConnecting(5).
@@ -56,10 +56,10 @@ func main() {
 
 	// 4. Start the HTTP server
 	router := roomHandler.RoomRouter()
-	router.GET("/", func(c *gin.Context) {
+	router.GET("/rooms", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome to Room Service")
 	})
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/rooms/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 	srv := &http.Server{
