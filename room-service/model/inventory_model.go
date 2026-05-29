@@ -2,10 +2,12 @@ package model
 
 import (
 	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type Inventory struct {
-	ID        string          `bson:"_id,omitempty" json:"id"`
+	ID        bson.ObjectID   `bson:"_id,omitempty" json:"id"`
 	RoomID    string          `bson:"room_id" json:"room_id"` // Matches Room.ID.Hex()
 	Month     string          `bson:"month" json:"month"`     // Format: YYYY-MM
 	Slots     map[string]Slot `bson:"slots" json:"slots"`     // Key: day of month (1-31), Value: Slot struct

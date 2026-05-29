@@ -2,6 +2,8 @@ package dto
 
 import (
 	"booking/booking-service/model"
+	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -10,10 +12,10 @@ import (
 // TotalAmount and NightlyRates are NOT accepted — room-service is the sole price authority for final pricing.
 // Room.Price and Room.Currency are snapshot values from the client's search results (display only, not final).
 type CreateBookingRequest struct {
-	User         User      `json:"user" binding:"required"`
-	Room         Room      `json:"room" binding:"required"`
-	CheckInDate  time.Time `json:"check_in_date" binding:"required"`
-	CheckOutDate time.Time `json:"check_out_date" binding:"required"`
+	User         User     `json:"user" binding:"required"`
+	Room         Room     `json:"room" binding:"required"`
+	CheckInDate  DateOnly `json:"check_in_date" binding:"required"`
+	CheckOutDate DateOnly `json:"check_out_date" binding:"required"`
 }
 
 type User struct {
@@ -30,6 +32,34 @@ type Room struct {
 	Type       string  `json:"type" binding:"required"`
 	Price      float64 `json:"price" binding:"required,gt=0"`
 	Currency   string  `json:"currency" binding:"required"`
+}
+
+type DateOnly time.Time
+
+// MarshalJSON serializes the date to "YYYY-MM-DD" JSON format.
+func (d DateOnly) MarshalJSON() ([]byte, error) {
+	t := time.Time(d)
+	if t.IsZero() {
+		return []byte("null"), nil
+	}
+	return []byte(fmt.Sprintf("%q", t.Format(time.DateOnly))), nil
+}
+
+// UnmarshalJSON deserializes a "YYYY-MM-DD" JSON string into time.Time.
+func (d *DateOnly) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == "" {
+		return nil
+	}
+	t, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		return err
+	}
+	*d = DateOnly(t)
+	return nil
 }
 
 // ToModel converts the DTO into the domain model used by the service layer.
@@ -50,8 +80,8 @@ func (r *CreateBookingRequest) ToModel() *model.Booking {
 			Price:      r.Room.Price,
 			Currency:   r.Room.Currency,
 		},
-		CheckInDate:  r.CheckInDate,
-		CheckOutDate: r.CheckOutDate,
+		CheckInDate:  time.Time(r.CheckInDate),
+		CheckOutDate: time.Time(r.CheckOutDate),
 		TotalAmount:  0, //TODO: calculate
 	}
 }

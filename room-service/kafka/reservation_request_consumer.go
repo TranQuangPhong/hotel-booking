@@ -161,6 +161,9 @@ func (c *ReservationRequestConsumer) publishFailure(ctx context.Context, msg *ev
 			Success:   false,
 			ErrorCode: errorCode,
 			Reason:    reason,
+			Room: event.Room{
+				RoomID: data.RoomID,
+			},
 			User: event.User{
 				UserID:         data.User.UserID,
 				Name:           data.User.Name,

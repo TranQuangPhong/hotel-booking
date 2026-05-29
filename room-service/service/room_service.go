@@ -85,7 +85,7 @@ func (s *RoomService) CreateRoomWithInventory(ctx context.Context, room *model.R
 		now := time.Now().UTC()
 		inventoryBucket := make([]model.Inventory, 0, 12)
 
-		for i := 1; i <= 12; i++ {
+		for i := 0; i <= 11; i++ {
 			// Calculate the target month
 			targetMonth := now.AddDate(0, i, 0)
 			year, month, _ := targetMonth.Date()
