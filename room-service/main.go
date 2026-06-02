@@ -3,12 +3,13 @@ package main
 import (
 	"booking/room-service/handler"
 	"booking/room-service/kafka"
+	"booking/room-service/pkg/logger"
 	"booking/room-service/repository"
 	"booking/room-service/service"
 	"context"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -19,11 +20,15 @@ import (
 )
 
 func main() {
-	// 1. Create a root context that listens for OS shutdown signals
+	// 1. Initialize structured logger FIRST
+	log := logger.NewLogger()
+	slog.SetDefault(log)
+
+	// 2. Create a root context that listens for OS shutdown signals
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	//2. MongoDB connection setup
+	// 3. MongoDB connection setup
 	credential := options.Credential{
 		Username: "room_service",
 		Password: "room_service",
@@ -36,15 +41,16 @@ func main() {
 		SetMaxConnIdleTime(10 * time.Minute)
 	client, err := mongo.Connect(opts)
 	if err != nil {
-		log.Fatal("Failed to connect to MongoDB:", err)
+		slog.Error("Failed to connect to MongoDB", "error", err.Error())
+		os.Exit(1)
 	}
 	defer func() {
 		if err = client.Disconnect(context.Background()); err != nil {
-			log.Fatal("Failed to disconnect from MongoDB:", err)
+			slog.Error("Failed to disconnect from MongoDB", "error", err.Error())
 		}
 	}()
 
-	// 3. Initialize repository, service, and handler
+	// 4. Initialize repository, service, and handler
 	roomsCollection := client.Database("hotel-booking-system").Collection("rooms")
 	roomRepo := repository.NewRoomRepository(roomsCollection)
 
@@ -54,7 +60,7 @@ func main() {
 	roomService := service.NewRoomService(client, roomRepo, inventoryRepo)
 	roomHandler := handler.NewRoomHandler(roomService)
 
-	// 4. Start the HTTP server
+	// 5. Start the HTTP server
 	router := roomHandler.RoomRouter()
 	router.GET("/rooms", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome to Room Service")
@@ -67,56 +73,57 @@ func main() {
 		Handler: router,
 	}
 	go func() {
-		fmt.Println("Server starting on :8182...")
+		slog.Info("Server starting", "addr", ":8182")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Listen error: %s\n", err)
+			slog.Error("Listen error", "error", err.Error())
+			os.Exit(1)
 		}
 	}()
 
-	// 5. Initialize and Start the Kafka Consumer
-	log.Println("Kafka consumer starting ...")
+	// 6. Initialize and Start the Kafka Consumer
+	slog.Info("Kafka consumer starting")
 	brokers := []string{kafka.BookingBrokerAddress}
 	groupID := kafka.RoomReservationEventsGroupID
 	topics := []string{kafka.BookingCreatedTopic}
 	reservationProducer, err := kafka.NewReservationProducer(brokers)
 	if err != nil {
-		log.Fatalf("Failed to create Kafka producer: %v", err)
+		slog.Error("Failed to create Kafka producer", "error", err.Error())
+		os.Exit(1)
 	}
 	reservationConsumer, err := kafka.NewReservationConsumer(brokers, groupID, topics, roomService, reservationProducer)
 	if err != nil {
-		log.Fatalf("Failed to create Kafka consumer: %v", err)
+		slog.Error("Failed to create Kafka consumer", "error", err.Error())
+		os.Exit(1)
 	}
 	go reservationConsumer.Start(ctx)
 
-	log.Println("Finished initialization, service is running...")
+	slog.Info("Finished initialization, service is running")
 
-	// 6. Block the main thread waiting for the interrupt signal
+	// 7. Block the main thread waiting for the interrupt signal
 	<-ctx.Done()
-	log.Println("Shutdown signal received, exiting...")
+	slog.Info("Shutdown signal received, exiting")
 
-	// 7. Attempt graceful shutdown with a timeout
-	// This gives both the HTTP server and Kafka consumer 5 seconds to finish inflight tasks.
+	// 8. Attempt graceful shutdown with a timeout
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// A. Shutdown HTTP server
-	log.Println("Shutting down HTTP server...")
+	slog.Info("Shutting down HTTP server")
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("HTTP server forced to shutdown: %v", err)
+		slog.Error("HTTP server forced to shutdown", "error", err.Error())
 	} else {
-		log.Println("HTTP server exiting gracefully")
+		slog.Info("HTTP server exiting gracefully")
 	}
+
 	// B. Shutdown Kafka consumer
-	// Commits any pending offsets and closes connections to the broker.
-	log.Println("Shutting down Kafka consumer...")
+	slog.Info("Shutting down Kafka consumer")
 	reservationConsumer.Close()
-	log.Println("Kafka consumer shut down successfully")
+	slog.Info("Kafka consumer shut down successfully")
 
 	// C. Shutdown Kafka producer
-	// Flushes pending writes and closes connections to the broker.
-	log.Println("Shutting down Kafka producer...")
+	slog.Info("Shutting down Kafka producer")
 	reservationProducer.Close()
-	log.Println("Kafka producer shut down successfully")
+	slog.Info("Kafka producer shut down successfully")
 
-	log.Println("Room Service exiting gracefully")
+	slog.Info("Room Service exiting gracefully")
 }

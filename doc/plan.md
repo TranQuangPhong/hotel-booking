@@ -32,6 +32,6 @@
 
 Next: 4.4 --> 3.3
     - Impl new design, happy path
-        + Add logging
+        + Add logging: [done room service] -> next is booking service
         + Payment
         

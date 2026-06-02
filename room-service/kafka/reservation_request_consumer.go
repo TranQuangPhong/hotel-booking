@@ -3,11 +3,12 @@ package kafka
 import (
 	"booking/room-service/event"
 	"booking/room-service/model"
+	"booking/room-service/pkg/logger"
 	"booking/room-service/service"
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -44,40 +45,65 @@ func (c *ReservationRequestConsumer) Start(ctx context.Context) {
 		}
 		// 3. Handle consumer errors (like losing connection to the broker)
 		fetches.EachError(func(topic string, partition int32, err error) {
-			log.Printf("Fetch error on topic %s, partition %d: %v\n", topic, partition, err)
+			slog.ErrorContext(ctx, "Fetch error",
+				slog.String("topic", topic),
+				slog.Int("partition", int(partition)),
+				slog.String("error", err.Error()),
+			)
 		})
 
 		// 4. Process the actual messages
 		fetches.EachRecord(func(record *kgo.Record) {
 			var bookingCreatedMsg *event.EventEnvelope[event.BookingCreatedMsg]
-			log.Printf("Received message: %s\n", string(record.Value))
 
 			if err := json.Unmarshal(record.Value, &bookingCreatedMsg); err != nil {
-				log.Printf("Failed to unmarshal message (skipping): %v\n", err)
+				slog.ErrorContext(ctx, "Failed to unmarshal message (skipping)",
+					slog.String("error", err.Error()),
+				)
 				// Permanent failure — commit to avoid infinite redelivery (poison pill)
 				// TODO: publish to dead-letter queue for investigation
 				c.client.CommitRecords(ctx, record)
 				return
 			}
 
+			// Extract TraceID from incoming envelope or generate new one
+			traceID := bookingCreatedMsg.TraceID
+			if traceID == "" {
+				traceID = generateUUID()
+			}
+
+			// Create enriched context with trace_id
+			msgCtx := logger.WithTraceID(ctx, traceID)
+
 			data := bookingCreatedMsg.Data
-			log.Printf("Processing booking reservation: %s\n", data.BookingID)
+			slog.InfoContext(msgCtx, "Processing booking reservation",
+				slog.String("booking_id", data.BookingID),
+				slog.String("room_id", data.RoomID),
+			)
 
 			// Reserve room and calculate pricing from inventory
-			result, err := c.service.ReserveRoom(ctx, data.RoomID, data.CheckInDate, data.CheckOutDate, data.BookingID)
+			result, err := c.service.ReserveRoom(msgCtx, data.RoomID, data.CheckInDate, data.CheckOutDate, data.BookingID)
 			if err != nil {
-				log.Printf("Failed to reserve room: %v\n", err)
+				slog.ErrorContext(msgCtx, "Failed to reserve room",
+					slog.String("booking_id", data.BookingID),
+					slog.String("room_id", data.RoomID),
+					slog.String("error", err.Error()),
+				)
 				// Publish failure so booking-service can update status
-				c.publishFailure(ctx, bookingCreatedMsg, "INTERNAL_ERROR", fmt.Sprintf("failed to reserve room: %v", err))
+				c.publishFailure(msgCtx, bookingCreatedMsg, traceID, "INTERNAL_ERROR", fmt.Sprintf("failed to reserve room: %v", err))
 				return // Do NOT commit — message will be redelivered
 			}
 
 			// Fetch room details for the response
-			room, err := c.service.GetRoomByID(ctx, data.RoomID)
+			room, err := c.service.GetRoomByID(msgCtx, data.RoomID)
 			if err != nil {
-				log.Printf("Failed to fetch room details: %v\n", err)
+				slog.ErrorContext(msgCtx, "Failed to fetch room details",
+					slog.String("booking_id", data.BookingID),
+					slog.String("room_id", data.RoomID),
+					slog.String("error", err.Error()),
+				)
 				// Publish failure so booking-service can update status
-				c.publishFailure(ctx, bookingCreatedMsg, "INTERNAL_ERROR", fmt.Sprintf("failed to fetch room details: %v", err))
+				c.publishFailure(msgCtx, bookingCreatedMsg, traceID, "INTERNAL_ERROR", fmt.Sprintf("failed to fetch room details: %v", err))
 				return // Do NOT commit — message will be redelivered
 			}
 
@@ -92,12 +118,19 @@ func (c *ReservationRequestConsumer) Start(ctx context.Context) {
 			}
 
 			// Publish success result
-			c.publishSuccess(ctx, bookingCreatedMsg, result, room, eventRates)
-			log.Printf("Reservation result published for booking %s (success=%v)\n", data.BookingID, result.Success)
+			c.publishSuccess(msgCtx, bookingCreatedMsg, traceID, result, room, eventRates)
+			slog.InfoContext(msgCtx, "Reservation result published",
+				slog.String("booking_id", data.BookingID),
+				slog.String("room_id", data.RoomID),
+				slog.Bool("success", result.Success),
+			)
 
 			// DB write succeeded + result published, commit offset
 			if err := c.client.CommitRecords(ctx, record); err != nil {
-				log.Printf("Failed to commit offset: %v\n", err)
+				slog.ErrorContext(msgCtx, "Failed to commit offset",
+					slog.String("booking_id", data.BookingID),
+					slog.String("error", err.Error()),
+				)
 			}
 		})
 	}
@@ -109,10 +142,10 @@ func (c *ReservationRequestConsumer) Close() {
 }
 
 // publishSuccess sends a success ReservationResultMsg with pricing and room details.
-func (c *ReservationRequestConsumer) publishSuccess(ctx context.Context, msg *event.EventEnvelope[event.BookingCreatedMsg], result *service.ReservationResult, room *model.Room, eventRates []event.NightlyRate) {
+func (c *ReservationRequestConsumer) publishSuccess(ctx context.Context, msg *event.EventEnvelope[event.BookingCreatedMsg], traceID string, result *service.ReservationResult, room *model.Room, eventRates []event.NightlyRate) {
 	data := msg.Data
 	successMsg := event.EventEnvelope[event.ReservationResultMsg]{
-		TraceID:   msg.TraceID,
+		TraceID:   traceID,
 		EventType: "reservation_result",
 		Producer:  "room-service",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
@@ -144,15 +177,19 @@ func (c *ReservationRequestConsumer) publishSuccess(ctx context.Context, msg *ev
 	producerCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	if err := c.producer.PublishReservationResult(producerCtx, successMsg); err != nil {
-		log.Printf("Failed to publish success result for booking %s: %v\n", data.BookingID, err)
+		slog.ErrorContext(ctx, "Failed to publish success result",
+			slog.String("booking_id", data.BookingID),
+			slog.String("topic", RoomReservationEventsTopic),
+			slog.String("error", err.Error()),
+		)
 	}
 }
 
 // publishFailure sends a failure ReservationResultMsg so the booking-service can update the booking status.
-func (c *ReservationRequestConsumer) publishFailure(ctx context.Context, msg *event.EventEnvelope[event.BookingCreatedMsg], errorCode string, reason string) {
+func (c *ReservationRequestConsumer) publishFailure(ctx context.Context, msg *event.EventEnvelope[event.BookingCreatedMsg], traceID string, errorCode string, reason string) {
 	data := msg.Data
 	failureMsg := event.EventEnvelope[event.ReservationResultMsg]{
-		TraceID:   msg.TraceID,
+		TraceID:   traceID,
 		EventType: "reservation_result",
 		Producer:  "room-service",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
@@ -180,6 +217,10 @@ func (c *ReservationRequestConsumer) publishFailure(ctx context.Context, msg *ev
 	producerCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	if err := c.producer.PublishReservationResult(producerCtx, failureMsg); err != nil {
-		log.Printf("Failed to publish failure result for booking %s: %v\n", data.BookingID, err)
+		slog.ErrorContext(ctx, "Failed to publish failure result",
+			slog.String("booking_id", data.BookingID),
+			slog.String("topic", RoomReservationEventsTopic),
+			slog.String("error", err.Error()),
+		)
 	}
 }

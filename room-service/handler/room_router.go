@@ -5,7 +5,9 @@ import (
 )
 
 func (h *RoomHandler) RoomRouter() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(LoggingMiddleware())
 
 	v1 := r.Group("/rooms/api/v1")
 	{
