@@ -7,7 +7,7 @@ import (
 	"booking/booking-service/service"
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -68,7 +68,6 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 	msg := event.EventEnvelope[event.BookingCreatedMsg]{
-		TraceID:   "0", //TODO: generate real trace ID for distributed tracing
 		EventType: "booking_created",
 		Producer:  "booking-service",
 		Timestamp: time.Now().UTC().Format(time.RFC3339), //Explicitly use UTC and RFC3339 for timestamps to ensure cross-service compatibility
@@ -94,7 +93,7 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	err = h.producer.PublishBookingCreated(ctx, msg)
 
 	if err != nil {
-		log.Printf("Failed to publish to Kafka: %v", err)
+		slog.ErrorContext(ctx, "Failed to publish to Kafka", "error", err.Error(), "booking_id", bookingID, "topic", kafka.BookingCreatedTopic)
 		c.JSON(500, gin.H{"error": fmt.Errorf("Service temporarily unavailable: failed to create booking: %w", err).Error()})
 		return
 	}

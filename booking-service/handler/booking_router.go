@@ -3,7 +3,9 @@ package handler
 import "github.com/gin-gonic/gin"
 
 func (h *BookingHandler) Bookingrouter() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(LoggingMiddleware())
 
 	v1 := r.Group("/bookings/api/v1")
 	{

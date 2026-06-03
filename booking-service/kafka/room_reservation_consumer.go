@@ -3,11 +3,13 @@ package kafka
 import (
 	"booking/booking-service/event"
 	"booking/booking-service/model"
+	"booking/booking-service/pkg/logger"
 	"booking/booking-service/service"
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 
+	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -42,35 +44,68 @@ func (c *RoomReservationConsumer) Start(ctx context.Context) {
 		}
 		// 3. Handle consumer errors (like losing connection to the broker)
 		fetches.EachError(func(topic string, partition int32, err error) {
-			log.Printf("Fetch error on topic %s partition %d: %v\n", topic, partition, err)
+			slog.ErrorContext(ctx, "Fetch error",
+				slog.String("topic", topic),
+				slog.Int("partition", int(partition)),
+				slog.String("error", err.Error()),
+			)
 		})
 
 		// 4. Process the actual messages
 		fetches.EachRecord(func(record *kgo.Record) {
 			var reservationResult *event.EventEnvelope[event.ReservationResultMsg]
-			log.Printf("Received message: %s\n", string(record.Value))
 
 			if err := json.Unmarshal(record.Value, &reservationResult); err != nil {
-				log.Printf("Failed to unmarshal message (skipping): %v\n", err)
+				// Generate trace_id for unmarshal failures (no envelope available)
+				traceID := uuid.New().String()
+				msgCtx := logger.WithTraceID(ctx, traceID)
+				slog.ErrorContext(msgCtx, "Failed to unmarshal message (skipping)",
+					slog.String("trace_id", traceID),
+					slog.String("error", err.Error()),
+				)
 				// Permanent failure — commit to avoid infinite redelivery (poison pill)
 				// TODO: publish to dead-letter queue for investigation
 				c.client.CommitRecords(ctx, record)
 				return
 			}
 
+			// Extract trace_id from envelope, generate if empty
+			traceID := reservationResult.TraceID
+			if traceID == "" {
+				traceID = uuid.New().String()
+			}
+			msgCtx := logger.WithTraceID(ctx, traceID)
+
 			data := reservationResult.Data
-			log.Printf("Processing reservation result for booking %s (success=%v)\n", data.BookingID, data.Success)
+			slog.InfoContext(msgCtx, "Processing reservation result",
+				slog.String("trace_id", traceID),
+				slog.String("booking_id", data.BookingID),
+				slog.Bool("success", data.Success),
+			)
 
 			// Reservation failed — update status only
 			if !data.Success {
-				err := c.service.UpdateBookingStatus(ctx, data.BookingID, model.StatusReservationFailed)
+				err := c.service.UpdateBookingStatus(msgCtx, data.BookingID, model.StatusReservationFailed)
 				if err != nil {
-					log.Printf("Failed to update booking status to RESERVATION_FAILED: %v\n", err)
+					slog.ErrorContext(msgCtx, "Failed to update booking status to RESERVATION_FAILED",
+						slog.String("trace_id", traceID),
+						slog.String("booking_id", data.BookingID),
+						slog.String("error", err.Error()),
+					)
 					return // Do NOT commit — message will be redelivered
 				}
+				slog.InfoContext(msgCtx, "Reservation result processed",
+					slog.String("trace_id", traceID),
+					slog.String("booking_id", data.BookingID),
+					slog.Bool("success", data.Success),
+				)
 				// DB write succeeded, commit offset
 				if err := c.client.CommitRecords(ctx, record); err != nil {
-					log.Printf("Failed to commit offset: %v\n", err)
+					slog.ErrorContext(msgCtx, "Failed to commit offset",
+						slog.String("trace_id", traceID),
+						slog.String("booking_id", data.BookingID),
+						slog.String("error", err.Error()),
+					)
 				}
 				return
 			}
@@ -85,14 +120,27 @@ func (c *RoomReservationConsumer) Start(ctx context.Context) {
 				})
 			}
 
-			err := c.service.ConfirmBookingReservation(ctx, data.BookingID, nightlyRates, data.TotalAmount, data.Room.Price, data.Room.Currency)
+			err := c.service.ConfirmBookingReservation(msgCtx, data.BookingID, nightlyRates, data.TotalAmount, data.Room.Price, data.Room.Currency)
 			if err != nil {
-				log.Printf("Failed to confirm booking reservation: %v\n", err)
+				slog.ErrorContext(msgCtx, "Failed to confirm booking reservation",
+					slog.String("trace_id", traceID),
+					slog.String("booking_id", data.BookingID),
+					slog.String("error", err.Error()),
+				)
 				return // Do NOT commit — message will be redelivered
 			}
+			slog.InfoContext(msgCtx, "Reservation result processed",
+				slog.String("trace_id", traceID),
+				slog.String("booking_id", data.BookingID),
+				slog.Bool("success", data.Success),
+			)
 			// DB write succeeded, commit offset
 			if err := c.client.CommitRecords(ctx, record); err != nil {
-				log.Printf("Failed to commit offset: %v\n", err)
+				slog.ErrorContext(msgCtx, "Failed to commit offset",
+					slog.String("trace_id", traceID),
+					slog.String("booking_id", data.BookingID),
+					slog.String("error", err.Error()),
+				)
 			}
 		})
 	}
