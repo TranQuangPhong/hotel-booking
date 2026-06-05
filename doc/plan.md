@@ -32,7 +32,5 @@
 
 Next: 4.4 --> 3.3
     - Impl new design, happy path
-        + Add logging: [done room service] -> next is booking service
-        + Retest flow
         + Payment
-        
+    - Reserve room (redis locking)
